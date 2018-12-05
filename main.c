@@ -5,51 +5,29 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define SHM_SIZE 1024  /* make it a 1K shared memory segment */
+#define KEY 24601 //NOT A GOOOD IDEA
+#define SEG_SIZE 200
 
-int main(int argc, char *argv[])
+int main()
 {
-    key_t key;
-    int shmid;
-    char *data;
-    int mode;
+	int shmd;
+	char * data;
+	char input[3];
+	
+	shmd = shmget(KEY, SEG_SIZE, IPC_CREAT | 0644); //not overwrite
+	data = shmat(shmd, 0 , 0);
+	if(!(*data)){printf("New segment, no data to display\n");}
+	else{printf("woo\n");}	
+	printf("data:%s\n",data);
+	fgets(data, SEG_SIZE, stdin);
+	*strchr(data, '\n') = 0;
+	
+	
+	
+	shmdt(data);
+	shmctl(shmd, IPC_RMID, 0);
+	
 
-    if (argc > 2) {
-        fprintf(stderr, "usage: shmdemo [data_to_write]\n");
-        exit(1);
-    }
-
-    /* make the key: */
-    if ((key = ftok("shmdemo.c", 'R')) == -1) {
-        perror("ftok");
-        exit(1);
-    }
-
-    /* connect to (and possibly create) the segment: */
-    if ((shmid = shmget(key, SHM_SIZE, 0644 | IPC_CREAT)) == -1) {
-        perror("shmget");
-        exit(1);
-    }
-
-    /* attach to the segment to get a pointer to it: */
-    data = shmat(shmid, (void *)0, 0);
-    if (data == (char *)(-1)) {
-        perror("shmat");
-        exit(1);
-    }
-
-    /* read or modify the segment, based on the command line: */
-    if (argc == 2) {
-        printf("writing to segment: \"%s\"\n", argv[1]);
-        strncpy(data, argv[1], SHM_SIZE);
-    } else
-        printf("segment contains: \"%s\"\n", data);
-
-    /* detach from the segment: */
-    if (shmdt(data) == -1) {
-        perror("shmdt");
-        exit(1);
-    }
-
+		
     return 0;
 }
